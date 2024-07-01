@@ -22,6 +22,9 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	networking "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestEqualConfiguration(t *testing.T) {
@@ -304,5 +307,94 @@ func TestSSLCertMatch(t *testing.T) {
 		if result != testCase.expected {
 			t.Errorf("expected %v but returned %v (%v - %v)", testCase.expected, result, testCase.sslCertA, testCase.sslCertB)
 		}
+	}
+}
+
+func TestLocationEqualWithCustomTemplateAnnotations(t *testing.T) {
+	tests := []struct {
+		name        string
+		annotations []string
+		loc1        *Location
+		loc2        *Location
+		equal       bool
+	}{
+		{
+			name:        "No custom annotations, not equal",
+			annotations: []string{},
+			loc1: &Location{
+				Ingress: &Ingress{
+					Ingress: networking.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{"key1": "value1"},
+						},
+					},
+				},
+			},
+			loc2: &Location{
+				Ingress: &Ingress{
+					Ingress: networking.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{"key1": "value2"},
+						},
+					},
+				},
+			},
+			equal: true,
+		},
+		{
+			name:        "Custom annotations, not equal",
+			annotations: []string{"key2"},
+			loc1: &Location{
+				Ingress: &Ingress{
+					Ingress: networking.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{"key1": "value1", "key2": "value2"},
+						},
+					},
+				},
+			},
+			loc2: &Location{
+				Ingress: &Ingress{
+					Ingress: networking.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{"key1": "value1", "key2": "different"},
+						},
+					},
+				},
+			},
+			equal: false,
+		},
+		{
+			name:        "Custom annotations, equal",
+			annotations: []string{"key2"},
+			loc1: &Location{
+				Ingress: &Ingress{
+					Ingress: networking.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{"key1": "value1", "key2": "value2"},
+						},
+					},
+				},
+			},
+			loc2: &Location{
+				Ingress: &Ingress{
+					Ingress: networking.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{"key1": "value1", "key2": "value2"},
+						},
+					},
+				},
+			},
+			equal: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			SetCustomTemplateAnnotations(tt.annotations)
+			if got := tt.loc1.Equal(tt.loc2); got != tt.equal {
+				t.Errorf("Expected equality to be %v, got %v", tt.equal, got)
+			}
+		})
 	}
 }

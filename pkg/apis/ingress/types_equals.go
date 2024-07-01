@@ -20,6 +20,12 @@ import (
 	"k8s.io/ingress-nginx/pkg/util/sets"
 )
 
+var customTemplateAnnotations []string
+
+func SetCustomTemplateAnnotations(annotations []string) {
+	customTemplateAnnotations = annotations
+}
+
 // Equal tests for equality between two Configuration types
 func (c1 *Configuration) Equal(c2 *Configuration) bool {
 	if c1 == c2 {
@@ -468,6 +474,12 @@ func (l1 *Location) Equal(l2 *Location) bool {
 
 	if l1.DisableProxyInterceptErrors != l2.DisableProxyInterceptErrors {
 		return false
+	}
+
+	for _, annotation := range customTemplateAnnotations {
+		if l1.Ingress != nil && l2.Ingress != nil && l1.Ingress.Annotations[annotation] != l2.Ingress.Annotations[annotation] {
+			return false
+		}
 	}
 
 	return true

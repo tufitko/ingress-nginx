@@ -35,6 +35,7 @@ import (
 	"k8s.io/ingress-nginx/internal/ingress/status"
 	ing_net "k8s.io/ingress-nginx/internal/net"
 	"k8s.io/ingress-nginx/internal/nginx"
+	"k8s.io/ingress-nginx/pkg/apis/ingress"
 	klog "k8s.io/klog/v2"
 )
 
@@ -237,6 +238,9 @@ https://blog.maxmind.com/2019/12/18/significant-changes-to-accessing-and-using-g
 	flags.IntVar(&nginx.MaxmindRetriesCount, "maxmind-retries-count", 1, "Number of attempts to download the GeoIP DB.")
 	flags.DurationVar(&nginx.MaxmindRetriesTimeout, "maxmind-retries-timeout", time.Second*0, "Maxmind downloading delay between 1st and 2nd attempt, 0s - do not retry to download if something went wrong.")
 
+	var customTemplateAnnotations []string
+	flags.StringSliceVar(&customTemplateAnnotations, "custom-template-annotations", nil, "List of custom annotations which will be used to generate the NGINX configuration template.")
+
 	flags.AddGoFlagSet(flag.CommandLine)
 	if err := flags.Parse(os.Args); err != nil {
 		return false, nil, err
@@ -259,6 +263,8 @@ https://blog.maxmind.com/2019/12/18/significant-changes-to-accessing-and-using-g
 
 	parser.AnnotationsPrefix = *annotationsPrefix
 	parser.EnableAnnotationValidation = *enableAnnotationValidation
+
+	ingress.SetCustomTemplateAnnotations(customTemplateAnnotations)
 
 	// check port collisions
 	if !ing_net.IsPortAvailable(*httpPort) {
