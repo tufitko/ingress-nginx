@@ -3,6 +3,34 @@ entries:
   ingress-nginx:
   - annotations:
       artifacthub.io/changes: |
+        - 'CI: Fix chart testing. (#12258)'
+        - Update Ingress-Nginx version controller-v1.12.0
+      artifacthub.io/prerelease: "false"
+    apiVersion: v2
+    appVersion: 1.12.0
+    created: "2025-03-13T11:51:45.503364922Z"
+    description: Ingress controller for Kubernetes using NGINX as a reverse proxy
+      and load balancer
+    digest: 1f4a7688bf731870a7a53b333797114ae5051c5db5ae0cc2c8bf4fc4a2fde901
+    home: https://github.com/kubernetes/ingress-nginx
+    icon: https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Nginx_logo.svg/500px-Nginx_logo.svg.png
+    keywords:
+    - ingress
+    - nginx
+    kubeVersion: '>=1.21.0-0'
+    maintainers:
+    - name: cpanato
+    - name: Gacko
+    - name: strongjz
+    - name: tao12345666333
+    name: ingress-nginx
+    sources:
+    - https://github.com/kubernetes/ingress-nginx
+    urls:
+    - https://github.com/tufitko/ingress-nginx/releases/download/helm-chart-4.12.0/ingress-nginx-4.12.0.tgz
+    version: 4.12.0
+  - annotations:
+      artifacthub.io/changes: |
         - "[8459](https://github.com/kubernetes/ingress-nginx/pull/8459) Update default allowed CORS headers"
         - "[8202](https://github.com/kubernetes/ingress-nginx/pull/8202) disable modsecurity on error page"
         - "[8178](https://github.com/kubernetes/ingress-nginx/pull/8178) Add header Host into mirror annotations"
@@ -2425,4 +2453,4 @@ entries:
     urls:
     - https://github.com/kubernetes/ingress-nginx/releases/download/ingress-nginx-2.0.0/ingress-nginx-2.0.0.tgz
     version: 2.0.0
-generated: "2022-05-31T13:27:49.707868081Z"
+generated: "2025-03-13T11:51:45.503684218Z"
