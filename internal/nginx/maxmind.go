@@ -19,15 +19,13 @@ package nginx
 import (
 	"archive/tar"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"strings"
-	"syscall"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -54,6 +52,8 @@ var MaxmindRetriesTimeout = time.Second * 0
 
 // minimumRetriesCount minimum value of the MaxmindRetriesCount parameter. If MaxmindRetriesCount less than minimumRetriesCount, it will be set to minimumRetriesCount
 const minimumRetriesCount = 1
+
+const maxmindRequestTimeout = 30 * time.Second
 
 const (
 	geoIPPath   = "/etc/ingress-controller/geoip"
@@ -101,7 +101,7 @@ func DownloadGeoLite2DB(attempts int, period time.Duration) error {
 	var lastErr error
 	retries := 0
 
-	lastErr = wait.ExponentialBackoff(defaultRetry, func() (bool, error) {
+	_ = wait.ExponentialBackoff(defaultRetry, func() (bool, error) {
 		var dlError error
 		for _, dbName := range strings.Split(MaxmindEditionIDs, ",") {
 			dlError = downloadDatabase(dbName)
@@ -115,18 +115,9 @@ func DownloadGeoLite2DB(attempts int, period time.Duration) error {
 			return true, nil
 		}
 
-		if e, ok := dlError.(*url.Error); ok {
-			if e, ok := e.Err.(*net.OpError); ok {
-				if e, ok := e.Err.(*os.SyscallError); ok {
-					if e.Err == syscall.ECONNREFUSED {
-						retries++
-						klog.InfoS("download failed on attempt " + fmt.Sprint(retries))
-						return false, nil
-					}
-				}
-			}
-		}
-		return true, nil
+		retries++
+		klog.InfoS("download failed on attempt " + fmt.Sprint(retries))
+		return false, nil
 	})
 	return lastErr
 }
@@ -140,7 +131,10 @@ func createURL(mirror, licenseKey, dbName string) string {
 
 func downloadDatabase(dbName string) error {
 	newURL := createURL(MaxmindMirror, MaxmindLicenseKey, dbName)
-	req, err := http.NewRequest(http.MethodGet, newURL, http.NoBody)
+	ctx, cancel := context.WithTimeout(context.Background(), maxmindRequestTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, newURL, http.NoBody)
 	if err != nil {
 		return err
 	}
